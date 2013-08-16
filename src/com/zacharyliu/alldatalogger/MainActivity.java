@@ -2,6 +2,7 @@ package com.zacharyliu.alldatalogger;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,12 +34,12 @@ public class MainActivity extends Activity {
 	private Map<Integer, Sensor> sensors = new HashMap<Integer, Sensor>();
 	private TextView filenameDisplay;
 	private TextView logDisplay;
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+
 		// Get sensors to be captured
 		sensorTypes.put(Sensor.TYPE_ACCELEROMETER, "ACCEL");
 		sensorTypes.put(Sensor.TYPE_GYROSCOPE, "GYRO");
@@ -46,32 +47,34 @@ public class MainActivity extends Activity {
 		sensorTypes.put(Sensor.TYPE_MAGNETIC_FIELD, "MAG");
 		sensorTypes.put(Sensor.TYPE_GRAVITY, "GRAV");
 		sensorTypes.put(Sensor.TYPE_ROTATION_VECTOR, "ROTATION");
-		
+
 		sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 		for (Integer type : sensorTypes.keySet()) {
 			sensors.put(type, sensorManager.getDefaultSensor(type));
 		}
-		
-		locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-		
+
+		locationManager = (LocationManager) this
+				.getSystemService(Context.LOCATION_SERVICE);
+
 		// Register click listeners for buttons
 		findViewById(R.id.toggle).setOnClickListener(clickListener);
 		findViewById(R.id.btnEnter).setOnClickListener(clickListener);
 		findViewById(R.id.btnExit).setOnClickListener(clickListener);
-		
+
 		filenameDisplay = (TextView) findViewById(R.id.filename);
 		logDisplay = (TextView) findViewById(R.id.log);
 	}
-	
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		stopRecording();
 	}
-	
+
 	private void startRecording() {
 		// Prepare data storage
-		File directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+		File directory = Environment
+				.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 		String name = "AllData_" + System.currentTimeMillis() + ".csv";
 		File filename = new File(directory, name);
 		try {
@@ -80,14 +83,16 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 		}
 		filenameDisplay.setText(name);
-		
+
 		// Register sensor listeners
 		for (Sensor sensor : sensors.values()) {
-			sensorManager.registerListener(sensorListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+			sensorManager.registerListener(sensorListener, sensor,
+					SensorManager.SENSOR_DELAY_NORMAL);
 		}
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,
+				0, locationListener);
 	}
-	
+
 	private void stopRecording() {
 		sensorManager.unregisterListener(sensorListener);
 		locationManager.removeUpdates(locationListener);
@@ -99,7 +104,7 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private OnClickListener clickListener = new OnClickListener() {
 
 		@Override
@@ -120,9 +125,9 @@ public class MainActivity extends Activity {
 				break;
 			}
 		}
-		
+
 	};
-	
+
 	private SensorEventListener sensorListener = new SensorEventListener() {
 
 		@Override
@@ -133,14 +138,16 @@ public class MainActivity extends Activity {
 		public void onSensorChanged(SensorEvent event) {
 			write(sensorTypes.get(event.sensor.getType()), event.values);
 		}
-		
+
 	};
-	
+
 	private LocationListener locationListener = new LocationListener() {
 
 		@Override
 		public void onLocationChanged(Location location) {
-			write("GPS", new double[] {location.getLatitude(), location.getLongitude()});
+			write("GPS",
+					new double[] { location.getLatitude(),
+							location.getLongitude() });
 		}
 
 		@Override
@@ -154,7 +161,7 @@ public class MainActivity extends Activity {
 		@Override
 		public void onStatusChanged(String provider, int status, Bundle extras) {
 		}
-		
+
 	};
 
 	@Override
@@ -163,46 +170,47 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
-	
+
 	private void write(String tag, String[] values) {
 		if (file == null) {
 			return;
 		}
-		
+
 		String line = "";
 		if (values != null) {
 			for (String value : values) {
 				line += "," + value;
 			}
 		}
-		line = Long.toString(System.currentTimeMillis()) + "," + tag + line + "\n";
-		
+		line = Long.toString(System.currentTimeMillis()) + "," + tag + line
+				+ "\n";
+
 		try {
 			file.write(line);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		logDisplay.setText(line);
 	}
-	
+
 	private void write(String tag, float[] values) {
 		String[] array = new String[values.length];
-		for (int i=0; i<values.length; i++) {
+		for (int i = 0; i < values.length; i++) {
 			array[i] = Float.toString(values[i]);
 		}
 		write(tag, array);
 	}
-	
+
 	private void write(String tag, double[] values) {
 		String[] array = new String[values.length];
-		for (int i=0; i<values.length; i++) {
+		for (int i = 0; i < values.length; i++) {
 			array[i] = Double.toString(values[i]);
 		}
 		write(tag, array);
 	}
-	
+
 	private void write(String tag) {
 		write(tag, (String[]) null);
 	}
